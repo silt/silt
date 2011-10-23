@@ -1,0 +1,12 @@
+workload=com.yahoo.ycsb.workloads.CoreWorkload
+
+fieldcount=1
+# actual fieldlength will be specified by preprocessTrace
+fieldlength=0
+readallfields=true
+
+# total 6.4 GB for fieldlength=40 (+ 20 B key + 4 B metadata)
+recordcount=100000000
+
+# without this, YCSB may generate duplicate insert entries
+insertorder=ordered

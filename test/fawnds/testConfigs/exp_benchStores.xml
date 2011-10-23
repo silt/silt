@@ -1,0 +1,17 @@
+<fawnds>
+    <key-len>20</key-len>
+    <data-len>1000</data-len>
+
+    <size>100000</size>
+    <store-count>1000</store-count>
+    <!-- use store-count=500 if you are testing max epoch 2 on 256 GB main drive and 32 GB tmp drive -->
+    <merge-size>32</merge-size>
+
+    <get-count>100000000</get-count>
+
+    <temp-file>./tmp/</temp-file>
+
+    <include><file>exp_common.xml</file><src>child::store0</src><dest>.</dest></include>
+    <include><file>exp_common.xml</file><src>child::store1</src><dest>.</dest></include>
+    <include><file>exp_common.xml</file><src>child::store2</src><dest>.</dest></include>
+</fawnds>

@@ -1,0 +1,14 @@
+<fawnds>
+	<type>monitor</type>
+
+    <type>partition</type>
+    <id>0</id>
+    <skip-bits>0</skip-bits>
+    <partitions>32</partitions>
+
+    <include><file>exp_di.xml</file><src>child::store</src><dest>.</dest></include>
+
+    <set><node>child::store/store0/hashtable/hash-table-size</node><value>131072</value></set>
+    <set><node>child::store/store1/hashtable/hash-table-size</node><value>131072</value></set>
+    <set><node>child::store/store2/skip-bits</node><value>5</value></set>
+</fawnds>

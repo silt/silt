@@ -1,0 +1,15 @@
+===================================================
+to generate our predefined workload trace:
+
+Step0, install YCSB, go to your YCSB root dir
+
+Step1, run ./workload_gen.sh [path-to-YSCB] 
+
+===================================================
+useful options to customize workloads:
+
+{insert,read,update,scan}proportion  -- the portion to send given type of queires 
+operationcount -- the number of operations
+fieldcount     -- the number of fields in the table. For our K-V application, we can simply set this option to 1 (just a "value" field)
+recordcount    -- the number of different keys inserted or read. In YCSB, keys will look like "user1941507751" 
+fieldlength    -- the length of value when insert to the DB

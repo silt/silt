@@ -1,0 +1,67 @@
+<fawnds>
+    <store0>
+        <type>sf</type>
+        <id></id>
+        <key-len></key-len>
+        <data-len></data-len>
+        <file>./testFiles/front_file_header</file>
+
+        <hashtable>
+            <type>cuckoo</type>
+            <id></id>
+            <file>./testFiles/front_hashtable</file>
+            <hash-table-size>131072</hash-table-size>
+        </hashtable>
+
+        <datastore>
+            <type>file</type>
+            <id></id>
+            <data-len></data-len>
+            <file>./testFiles/front_datastore</file>
+        </datastore>
+    </store0>
+
+    <store1>
+        <type>sf</type>
+        <id></id>
+        <key-len></key-len>
+        <data-len></data-len>
+        <file>./testFiles/middle_file_header</file>
+
+        <keep-datastore-on-conversion>0</keep-datastore-on-conversion>
+
+        <hashtable>
+            <type>cuckoo</type>
+            <id></id>
+            <file>./testFiles/middle_hashtable</file>
+            <hash-table-size>131072</hash-table-size>
+            <use-offset>0</use-offset>
+        </hashtable>
+
+        <datastore>
+            <type>file</type>
+            <id></id>
+            <data-len></data-len>
+            <file>./testFiles/middle_datastore</file>
+        </datastore>
+    </store1>
+
+    <store2>
+        <type>sf_ordered_trie</type>
+        <id></id>
+        <key-len></key-len>
+        <data-len></data-len>
+        <keys-per-block>1</keys-per-block>
+        <size></size>
+        <bucket-size>256</bucket-size>
+        <skip-bits>0</skip-bits>
+
+        <datastore>
+            <type>file</type>
+            <id></id>
+            <data-len></data-len>
+            <file>./testFiles/back_datastore</file>
+        </datastore>
+    </store2>
+</fawnds>
+

@@ -1,0 +1,12 @@
+workload=com.yahoo.ycsb.workloads.CoreWorkload
+
+fieldcount=1
+# actual fieldlength will be specified by preprocessTrace
+fieldlength=0
+readallfields=true
+
+# total 0 GB for fieldlength=1000
+recordcount=1
+
+# without this, YCSB may generate duplicate insert entries
+insertorder=ordered

@@ -1,0 +1,7 @@
+<fawnds>
+	<type>monitor</type>
+
+	<type>bdb</type>
+	<id>0</id>
+	<file>./testFiles/bdb</file>
+</fawnds>

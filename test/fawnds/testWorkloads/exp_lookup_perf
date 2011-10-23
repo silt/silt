@@ -1,0 +1,7 @@
+# 47.6 min at 35 K QPS
+operationcount=100000000
+readproportion=1
+updateproportion=0
+scanproportion=0
+insertproportion=0
+requestdistribution=uniform

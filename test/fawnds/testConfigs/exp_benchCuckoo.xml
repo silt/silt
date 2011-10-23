@@ -1,0 +1,11 @@
+<fawnds>
+	<key-len>20</key-len>
+	<size>131072</size>
+
+	<cuckoo>
+		<type>cuckoo</type>
+		<id>0</id>
+		<file>./testFiles/hashtable</file>
+		<hash-table-size>131072</hash-table-size>
+	</cuckoo>
+</fawnds>

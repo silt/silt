@@ -1,0 +1,18 @@
+<fawnds>
+	<type>sf_ordered_trie</type>
+	<id>0</id>
+	<key-len>20</key-len>
+	<data-len>12</data-len>
+	<keys-per-block>1</keys-per-block>
+	<size>10000</size>
+	<bucket-size>512</bucket-size>
+	<skip-bits>0</skip-bits>
+
+	<datastore>
+		<type>file</type>
+		<id></id>
+		<data-len></data-len>
+        <use-buffered-io-only>1</use-buffered-io-only>
+		<file>./testFiles/datastore</file>
+	</datastore>
+</fawnds>

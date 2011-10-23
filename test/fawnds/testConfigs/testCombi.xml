@@ -1,0 +1,91 @@
+<fawnds>
+	<type>monitor</type>
+
+	<!--
+	<type>partition</type>
+	<id>0</id>
+	<skip-bits></skip-bits>
+	<partitions>4</partitions>
+	<store>
+	-->
+
+	<type>combi</type>
+	<id>0</id>
+
+	<key-len>20</key-len>
+	<data-len>100</data-len>
+
+	<!-- just for test program -->
+	<size>1000000</size>
+
+	<store0>
+		<type>sf</type>
+		<id></id>
+		<key-len></key-len>
+		<data-len></data-len>
+		<file>./testFiles/front_file_header</file>
+
+		<hashtable>
+			<type>cuckoo</type>
+			<id></id>
+			<file>./testFiles/front_hashtable</file>
+			<hash-table-size>131072</hash-table-size>
+		</hashtable>
+
+		<datastore>
+			<type>file</type>
+			<id></id>
+			<data-len></data-len>
+            <use-buffered-io-only>1</use-buffered-io-only>
+			<file>./testFiles/front_datastore</file>
+		</datastore>
+	</store0>
+
+	<store1>
+		<type>sf</type>
+		<id></id>
+		<key-len></key-len>
+		<data-len></data-len>
+		<file>./testFiles/middle_file_header</file>
+
+		<hashtable>
+			<type>cuckoo</type>
+			<id></id>
+			<file>./testFiles/middle_hashtable</file>
+			<hash-table-size>131072</hash-table-size>
+			<use-offset>0</use-offset>
+		</hashtable>
+
+		<datastore>
+			<type>file</type>
+			<id></id>
+			<data-len></data-len>
+            <use-buffered-io-only>1</use-buffered-io-only>
+			<file>./testFiles/middle_datastore</file>
+		</datastore>
+	</store1>
+
+	<store2>
+		<type>sf_ordered_trie</type>
+		<id></id>
+		<key-len></key-len>
+		<data-len></data-len>
+		<keys-per-block>1</keys-per-block>
+		<size></size>
+		<bucket-size>128</bucket-size>
+		<skip-bits>0</skip-bits>
+		<!--<skip-bits>2</skip-bits>-->
+
+		<datastore>
+			<type>file</type>
+			<id></id>
+			<data-len></data-len>
+            <use-buffered-io-only>1</use-buffered-io-only>
+			<file>./testFiles/back_datastore</file>
+		</datastore>
+	</store2>
+
+	<!--
+	</store>
+	-->
+</fawnds>

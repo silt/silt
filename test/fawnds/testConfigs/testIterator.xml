@@ -1,0 +1,21 @@
+<fawnds>
+	<type>sf</type>
+	<id>0</id>
+	<file>./testFiles/file_header</file>
+
+	<hashtable>
+		<type>default</type>
+		<!--<type>cuckoo</type>-->
+		<id></id>
+		<file>./testFiles/hashtable</file>
+		<hash-table-size>1048576</hash-table-size>
+	</hashtable>
+
+	<datastore>
+		<type>file</type>
+		<id></id>
+		<data-len></data-len>
+        <use-buffered-io-only>1</use-buffered-io-only>
+		<file>./testFiles/datastore</file>
+	</datastore>
+</fawnds>

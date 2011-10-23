@@ -1,0 +1,7 @@
+operationcount=500000000
+readproportion=0.90
+updateproportion=0
+scanproportion=0
+insertproportion=0.10
+requestdistribution=uniform
+

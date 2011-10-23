@@ -1,0 +1,19 @@
+<fawnds>
+    <store>
+        <type>combi</type>
+        <id></id>
+
+        <key-len>20</key-len>
+        <data-len>1000</data-len>
+
+        <temp-file>./tmp/</temp-file>
+
+        <stage-limit>2</stage-limit>
+        <store1-high-watermark>1</store1-high-watermark>
+        <store1-low-watermark>0</store1-low-watermark>
+    </store>
+
+    <include><file>exp_common.xml</file><src>child::store0</src><dest>child::store</dest></include>
+    <include><file>exp_common.xml</file><src>child::store1</src><dest>child::store</dest></include>
+    <include><file>exp_common.xml</file><src>child::store2</src><dest>child::store</dest></include>
+</fawnds>

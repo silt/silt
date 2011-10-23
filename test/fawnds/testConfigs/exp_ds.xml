@@ -1,0 +1,7 @@
+<fawnds>
+    <include><file>exp_dis.xml</file><src>child::store</src><dest>.</dest></include>
+
+    <set><node>child::store/store1/hashtable/use-offset</node><value>1</value></set>
+    <set><node>child::store/store1/keep-datastore-on-conversion</node><value>1</value></set>
+</fawnds>
+
