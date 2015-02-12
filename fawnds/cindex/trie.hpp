@@ -5,10 +5,27 @@
 #include "huffman.hpp"
 #include "exp_golomb.hpp"
 #include "sign_interleave.hpp"
-//#include <iostream>
+#include <iostream>
+
+//#define BENCHMARK
+//#define BENCHMARK_FINEGRAIN
+#ifdef BENCHMARK
+#include "stopwatch.hpp"
+#endif
 
 namespace cindex
 {
+	struct trie_stats
+	{
+		static uint64_t time_encode_total;
+		static uint64_t time_encode_golomb;
+		static uint64_t time_encode_huffman;
+		static uint64_t time_decode_total;
+		static uint64_t time_decode_golomb;
+		static uint64_t time_decode_huffman;
+		static void print();
+	};
+
 	template<bool WeakOrdering = false, unsigned int HuffmanCodingLimit = 16, typename RefType = uint8_t>
 	class trie
 	{
@@ -84,12 +101,18 @@ namespace cindex
 		template<typename Buffer, typename KeyArrayType>
 		void encode(Buffer& out_buf, const KeyArrayType& arr, std::size_t key_len, std::size_t off, std::size_t n, std::size_t dest_base = 0, std::size_t dest_keys_per_block = 1, std::size_t skip_bits = 0) const
 		{
+#ifdef BENCHMARK
+			scoped_stopwatch sw(trie_stats::time_encode_total);
+#endif
 			encode_rec(out_buf, arr, key_len, off, n, dest_base, dest_keys_per_block, skip_bits);
 		}
 
 		template<typename Buffer>
 		std::size_t locate(const Buffer& in_buf, std::size_t& in_out_buf_iter, const uint8_t* key, std::size_t key_len, std::size_t off, std::size_t n, std::size_t dest_base = 0, std::size_t dest_keys_per_block = 1, std::size_t skip_bits = 0) const
 		{
+#ifdef BENCHMARK
+			scoped_stopwatch sw(trie_stats::time_decode_total);
+#endif
 			return locate_rec(in_buf, in_out_buf_iter, key, key_len, off, n, dest_base, dest_keys_per_block, skip_bits);
 		}
 
@@ -132,9 +155,19 @@ namespace cindex
 
 			// encode the left tree size
 			if (n <= HuffmanCodingLimit)
+			{
+#ifdef BENCHMARK_FINEGRAIN
+				scoped_stopwatch sw(trie_stats::time_encode_huffman);
+#endif
 				huff_[n - 2]->encode(out_buf, left);
+			}
 			else
+			{
+#ifdef BENCHMARK_FINEGRAIN
+				scoped_stopwatch sw(trie_stats::time_encode_golomb);
+#endif
 				exp_golomb<>::encode<std::size_t>(out_buf, sign_interleave::encode<std::size_t>(left - n / 2));
+			}
 
 			encode_rec(out_buf, arr, key_len, off, left, dest_base, dest_keys_per_block, depth + 1);
 			encode_rec(out_buf, arr, key_len, off + left, n - left, dest_base, dest_keys_per_block, depth + 1);
@@ -159,9 +192,19 @@ namespace cindex
 			// decode the left tree size
 			std::size_t left;
 			if (n <= HuffmanCodingLimit)
+			{
+#ifdef BENCHMARK_FINEGRAIN
+				scoped_stopwatch sw(trie_stats::time_decode_huffman);
+#endif
 				left = huff_[n - 2]->decode(in_buf, in_out_buf_iter);
+			}
 			else
+			{
+#ifdef BENCHMARK_FINEGRAIN
+				scoped_stopwatch sw(trie_stats::time_decode_golomb);
+#endif
 				left = sign_interleave::decode<std::size_t>(exp_golomb<>::decode<std::size_t>(in_buf, in_out_buf_iter)) + n / 2;
+			}
 			assert(left <= n);
 
 			// find the number of keys on the left to the key (considering weak ordering)
@@ -195,9 +238,19 @@ namespace cindex
 			// decode the left tree size
 			std::size_t left;
 			if (n <= HuffmanCodingLimit)
+			{
+#ifdef BENCHMARK_FINEGRAIN
+				scoped_stopwatch sw(trie_stats::time_decode_huffman);
+#endif
 				left = huff_[n - 2]->decode(in_buf, in_out_buf_iter);
+			}
 			else
+			{
+#ifdef BENCHMARK_FINEGRAIN
+				scoped_stopwatch sw(trie_stats::time_decode_golomb);
+#endif
 				left = sign_interleave::decode<std::size_t>(exp_golomb<>::decode<std::size_t>(in_buf, in_out_buf_iter)) + n / 2;
+			}
 			assert(left <= n);
 
 			skip_rec(in_buf, in_out_buf_iter, key, key_len, off, left, dest_base, dest_keys_per_block, depth + 1);
@@ -206,6 +259,7 @@ namespace cindex
 
 	protected:
 		huffman<RefType>* huff_[HuffmanCodingLimit - 1];
+
 	};
 }
 
