@@ -1,6 +1,7 @@
 /* -*- Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*- */
 #include <iostream>
 #include <stdio.h>
+#include <unistd.h>
 #include "print.h"
 
 void bytes_into_hex_string(const u_char *data, u_int len, string& dststr)
