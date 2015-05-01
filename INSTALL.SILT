@@ -1,0 +1,6 @@
+0) # requirements: Intel TBB, Google Test Library, PThread, Boost, OpenSSL, Xerces, GSL, NSort, BDB
+1) autoreconf -is
+2) ./configure LDFLAGS=-Lgtest/gtest
+3) make
+4) cd test/fawnds/
+5) ./test<something>

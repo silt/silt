@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS = subdir-objects
+
 noinst_LTLIBRARIES = libfawnds.la
 libfawnds_la_CPPFLAGS = -I$(top_srcdir)/utils -D_FILE_OFFSET_BITS=64 \
 			-I$(builddir)/gen-cpp -Icindex -g

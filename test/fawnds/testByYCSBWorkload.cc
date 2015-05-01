@@ -200,7 +200,8 @@ void replay(string recfile) {
     ts.tv_nsec = 1000 * 1000;
     nanosleep(&ts, NULL);
     for (int t = 0; t < num_threads; t++) {
-        pthread_create(&sender_threads[t], NULL, query_sender, (void *) t);
+	long t2 = (long)t;
+        pthread_create(&sender_threads[t], NULL, query_sender, (void *) t2);
     }
 
     // wait for threads 

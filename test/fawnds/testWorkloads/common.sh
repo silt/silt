@@ -7,7 +7,8 @@ function generate_load_raw {
 
     echo generating $1.load.raw
 
-    java -cp ${YCSB_DIR}/build/ycsb.jar com.yahoo.ycsb.Client -load -db com.yahoo.ycsb.BasicDB $3 -s > $1.load.raw
+    #java -cp ${YCSB_DIR}/build/ycsb.jar com.yahoo.ycsb.Client -load -db com.yahoo.ycsb.BasicDB $3 -s > $1.load.raw
+    java -cp ${YCSB_DIR}/core/lib/core-0.1.4.jar com.yahoo.ycsb.Client -load -db com.yahoo.ycsb.BasicDB $3 -s > $1.load.raw
 }
 
 function generate_load {
@@ -17,7 +18,8 @@ function generate_load {
 
     echo generating $1.load
 
-    java -cp ${YCSB_DIR}/build/ycsb.jar com.yahoo.ycsb.Client -load -db com.yahoo.ycsb.BasicDB $3 -s | ../preprocessTrace $2 $1.load
+    #java -cp ${YCSB_DIR}/build/ycsb.jar com.yahoo.ycsb.Client -load -db com.yahoo.ycsb.BasicDB $3 -s | ../preprocessTrace $2 $1.load
+    java -cp ${YCSB_DIR}/core/lib/core-0.1.4.jar com.yahoo.ycsb.Client -load -db com.yahoo.ycsb.BasicDB $3 -s | ../preprocessTrace $2 $1.load
 }
 
 function generate_trans {
@@ -27,7 +29,8 @@ function generate_trans {
 
     echo generating $1.trans
 
-    java -cp ${YCSB_DIR}/build/ycsb.jar com.yahoo.ycsb.Client -t -db com.yahoo.ycsb.BasicDB $3 -s | ../preprocessTrace $2 $1.trans
+    #java -cp ${YCSB_DIR}/build/ycsb.jar com.yahoo.ycsb.Client -t -db com.yahoo.ycsb.BasicDB $3 -s | ../preprocessTrace $2 $1.trans
+    java -cp ${YCSB_DIR}/core/lib/core-0.1.4.jar com.yahoo.ycsb.Client -t -db com.yahoo.ycsb.BasicDB $3 -s | ../preprocessTrace $2 $1.trans
 }
 
 if [ $# -ne 1 ] 
