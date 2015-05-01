@@ -1,6 +1,17 @@
-0) # requirements: Intel TBB, Google Test Library, PThread, Boost, OpenSSL, Xerces, GSL, NSort, BDB
-1) autoreconf -is
-2) ./configure
-3) make
-4) cd test/fawnds/
-5) ./test<something>
+# requirements: Intel TBB, Google Test Library, PThread, Boost, OpenSSL, Xerces, GSL, NSort, BDB, automake, libtool, cmake
+1) sudo apt-get install libtbb-dev libgtest-dev libboost-thread-dev libssl-dev libxerces-c-dev libgsl0-dev libdb-dev autoconf automake libtool cmake
+
+2-1) cp -r /usr/src/gtest ./
+2-2) cd gtest
+2-3) cmake .
+2-4) make
+2-5) cd ..
+
+3) autoreconf -is
+
+4) ./configure LDFLAGS=-L${PWD}/gtest
+5) make -j4
+
+6-1) cd test/fawnds/
+6-2) ./test<something>
+
