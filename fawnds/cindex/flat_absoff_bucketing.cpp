@@ -24,6 +24,27 @@ namespace cindex
 
 	template<typename ValueType>
 	void
+	flat_absoff_bucketing<ValueType>::serialize(serializer& s) const
+	{
+		s << size_;
+		for (std::size_t i = 0; i < size_; i++)
+			s << bucket_info_[i][0] << bucket_info_[i][1];
+		s << current_i_;
+	}
+
+	template<typename ValueType>
+	void
+	flat_absoff_bucketing<ValueType>::deserialize(serializer& s)
+	{
+		s >> size_;
+		bucket_info_.resize(size_);
+		for (std::size_t i = 0; i < size_; i++)
+			s >> bucket_info_[i][0] >> bucket_info_[i][1];
+		s >> current_i_;
+	}
+
+	template<typename ValueType>
+	void
 	flat_absoff_bucketing<ValueType>::insert(const std::size_t& index_offset, const std::size_t& dest_offset)
 	{
 		assert(current_i_ < size_);

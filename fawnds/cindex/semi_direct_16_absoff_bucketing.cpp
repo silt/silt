@@ -35,6 +35,36 @@ namespace cindex
 	}
 
 	void
+	semi_direct_16_absoff_bucketing::serialize(serializer& s) const
+	{
+		s << size_;
+		for (std::size_t i = 0; i < size_ / 16 * 5; i++)
+			s << bucket_info_[i][0] << bucket_info_[i][1];
+		s << current_i_;
+		for (std::size_t i = 0; i < 16; i++)
+			s << last_index_offsets_[i];
+		for (std::size_t i = 0; i < 16; i++)
+			s << last_dest_offsets_[i];
+	}
+
+	void
+	semi_direct_16_absoff_bucketing::deserialize(serializer& s)
+	{
+		s >> size_;
+		boost::array<uint32_t, 2> v;
+		v[0] = v[1] = 0u;
+		bucket_info_.resize(0);
+		bucket_info_.resize(size_ / 16 * 5, v);
+		for (std::size_t i = 0; i < size_ / 16 * 5; i++)
+			s >> bucket_info_[i][0] >> bucket_info_[i][1];
+		s >> current_i_;
+		for (std::size_t i = 0; i < 16; i++)
+			s >> last_index_offsets_[i];
+		for (std::size_t i = 0; i < 16; i++)
+			s >> last_dest_offsets_[i];
+	}
+
+	void
 	semi_direct_16_absoff_bucketing::store(const std::size_t& idx, const std::size_t& type, const std::size_t& mask, const std::size_t& shift, const std::size_t& v)
 	{
 		assert((v & mask) == v);	// overflow test

@@ -4,6 +4,7 @@
 #include "bit_access.hpp"
 #include <map>
 #include <cstring>
+//#include <iostream>
 
 namespace cindex
 {
@@ -78,6 +79,7 @@ namespace cindex
 			: num_symbols_(num_symbols)
 		{
 			freqs_ = new FreqType[num_symbols_ * 2 - 1];
+			memset(freqs_, 0, sizeof(FreqType) * (num_symbols_ * 2 - 1));
 		}
 
 		~huffman_tree_generator() { delete [] freqs_; }
@@ -190,10 +192,11 @@ namespace cindex
 		huffman_rev_table(const huffman_tree<ref_type>& t)
 			: max_length_(0)
 		{
-			assert(t.num_symbols() <= (1 << block_info<ref_type>::bits_per_block));
+			assert(t.num_symbols() <= (static_cast<size_t>(1) << block_info<ref_type>::bits_per_block));
 			find_max_length(t, t.root(), 0);
 			assert(max_length_ <= (1 << block_info<length_type>::bits_per_block));
 
+			//std::cout << max_length_ << std::endl;
 			refs_ = new ref_type[1 << max_length_];
 			lengths_ = new length_type[1 << max_length_];
 			fill_table(t, t.root(), 0, 0);
@@ -262,7 +265,7 @@ namespace cindex
 		static const std::size_t nsymbol = std::size_t(-1);
 
 	public:
-		huffman(const huffman_tree<ref_type>& t) : t_(t), tbl_(t), rev_tbl_(t) {}
+		huffman(const huffman_tree<ref_type>& t) : t_(t), tbl_(t)/*, rev_tbl_(t)*/ {}
 
 		template<typename BufferType>
 		void encode(BufferType& out_buf, std::size_t symbol) const
@@ -315,7 +318,7 @@ namespace cindex
 	private:
 		const huffman_tree<ref_type> t_;
 		const huffman_table tbl_;
-		const huffman_rev_table<ref_type> rev_tbl_;
+		//const huffman_rev_table<ref_type> rev_tbl_;
 	};
 }
 

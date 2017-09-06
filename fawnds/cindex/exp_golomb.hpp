@@ -2,6 +2,7 @@
 
 #include "common.hpp"
 #include "bit_access.hpp"
+#include "intrinsics.hpp"
 
 namespace cindex
 {
@@ -12,7 +13,7 @@ namespace cindex
 		template<typename T, typename BufferType>
 		static void encode(BufferType& out_buf, const T& n)
 		{
-			BOOST_STATIC_ASSERT(sizeof(T) * 8 >= Order);
+			BOOST_STATIC_ASSERT(sizeof(T) * CHAR_BIT >= Order);
 
 			T m;
 			if (Order)
@@ -20,23 +21,24 @@ namespace cindex
 			else
 				m = n + 1;
 
-			int len = 0;
-			{
-				T p = m;
-				while (p)
-				{
-					len++;
-					p >>= 1;
-				}
-			}
+			//size_t len = 0;
+			//{
+			//	T p = m;
+			//	while (p)
+			//	{
+			//		len++;
+			//		p >>= 1;
+			//	}
+			//}
+			size_t len = sizeof(T) * CHAR_BIT - intrinsics::clz(m);
 
-			for (int i = 1; i < len; i++)
+			for (size_t i = 1; i < len; i++)
 				out_buf.push_back(0);
 
 			assert(m >> (len - 1) == 1);
 			out_buf.push_back(1);
 
-			//for (int i = len - 2; i >= 0; i--)
+			//for (int i = static_cast<int>(len) - 2; i >= 0; i--)
 			//	out_buf.push_back((m >> i) & 1);
 			out_buf.append(m, static_cast<std::size_t>(len - 1));
 
@@ -51,7 +53,7 @@ namespace cindex
 		template<typename T, typename BufferType>
 		static T decode(const BufferType& in_buf, std::size_t& in_out_buf_iter)
 		{
-			BOOST_STATIC_ASSERT(sizeof(T) * 8 >= Order);
+			BOOST_STATIC_ASSERT(sizeof(T) * CHAR_BIT >= Order);
 
 			int len = 1;
 			while (true)

@@ -1,5 +1,4 @@
 #include "bucketing_index.hpp"
-#include <iostream>
 
 // for template instantiation
 #include "flat_absoff_bucketing.hpp"
@@ -10,10 +9,22 @@
 
 namespace cindex
 {
-	template<typename BucketingType>
-	bucketing_index<BucketingType>::bucketing_index(std::size_t key_len, std::size_t n, std::size_t bucket_size, std::size_t dest_base, std::size_t dest_keys_per_block, std::size_t skip_bits)
-		: key_len_(key_len), n_(n), dest_base_(dest_base), dest_keys_per_block_(dest_keys_per_block), skip_bits_(skip_bits)
+	template<typename BucketingType, typename TrieType>
+	bucketing_index<BucketingType, TrieType>::bucketing_index()
+		: initialized_(false)
 	{
+	}
+
+	template<typename BucketingType, typename TrieType>
+	bucketing_index<BucketingType, TrieType>::bucketing_index(std::size_t key_len, std::size_t n, std::size_t bucket_size, std::size_t dest_base, std::size_t dest_keys_per_block, std::size_t skip_bits, trie_analyzer::dist_type* in_dist, trie_analyzer::dist_type* out_dist)
+		: initialized_(true), key_len_(key_len), n_(n), dest_base_(dest_base), dest_keys_per_block_(dest_keys_per_block), skip_bits_(skip_bits), in_dist_(in_dist), out_dist_(out_dist)
+	{
+		if (n_ == 0)
+		{
+			// avoid division by zero in several places
+			n = n_ = 1;
+		}
+
 		bucket_bits_ = 0;
 		while ((guarded_cast<std::size_t>(1) << bucket_bits_) < (n_ / bucket_size))
 			bucket_bits_++;
@@ -30,33 +41,83 @@ namespace cindex
 		assert(pending_keys_);
 		*/
 		pending_key_count_ = 0;
+
+		if (in_dist_)
+			trie_.recreate_huffman_from_dist(*in_dist_);
 	}
 
-	template<typename BucketingType>
-	bucketing_index<BucketingType>::bucketing_index(int fd, off_t offset)
+	template<typename BucketingType, typename TrieType>
+	void
+	bucketing_index<BucketingType, TrieType>::serialize(serializer& s) const
 	{
-		ssize_t len = load_from_file(fd, offset);
-		(void)len;
+		assert(initialized_);
+		assert(finalized());
+
+		s << key_len_;
+		s << n_;
+		s << bucket_size_;
+		s << dest_base_;
+		s << dest_keys_per_block_;
+		s << skip_bits_;
+		s << bucket_count_;
+		s << bucket_bits_;
+
+		s << repr_;
+		s << bucketing_;
 	}
 
-	template<typename BucketingType>
-	bucketing_index<BucketingType>::~bucketing_index()
+	template<typename BucketingType, typename TrieType>
+	void
+	bucketing_index<BucketingType, TrieType>::deserialize(serializer& s)
 	{
-		if (!finalized())
-			flush();
+		assert(!initialized_);
+
+		s >> key_len_;
+		s >> n_;
+		s >> bucket_size_;
+		s >> dest_base_;
+		s >> dest_keys_per_block_;
+		s >> skip_bits_;
+		s >> bucket_count_;
+		s >> bucket_bits_;
+
+		s >> repr_;
+		s >> bucketing_;
+
+		in_dist_ = NULL;
+		out_dist_ = NULL;
+
+		last_dest_offset_ = 0;
+		pending_bucket_ = bucket_count_;	// assume finalized state
+		pending_key_count_ = 0;
+
+		initialized_ = true;
+
 	}
 
-	template<typename BucketingType>
+	template<typename BucketingType, typename TrieType>
+	bucketing_index<BucketingType, TrieType>::~bucketing_index()
+	{
+		if (initialized_)
+		{
+			if (!finalized())
+				flush();
+		}
+	}
+
+	template<typename BucketingType, typename TrieType>
 	bool
-	bucketing_index<BucketingType>::finalized() const
+	bucketing_index<BucketingType, TrieType>::finalized() const
 	{
+		assert(initialized_);
 		return pending_bucket_ == bucket_count_;
 	}
 
-	template<typename BucketingType>
+	template<typename BucketingType, typename TrieType>
 	bool
-	bucketing_index<BucketingType>::insert(const uint8_t* key)
+	bucketing_index<BucketingType, TrieType>::insert(const uint8_t* key)
 	{
+		assert(initialized_);
 		assert(!finalized());
 
 		std::size_t bucket = find_bucket(key);
@@ -84,10 +145,11 @@ namespace cindex
 		return true;
 	}
 
-	template<typename BucketingType>
+	template<typename BucketingType, typename TrieType>
 	void
-	bucketing_index<BucketingType>::flush()
+	bucketing_index<BucketingType, TrieType>::flush()
 	{
+		assert(initialized_);
 		assert(!finalized());
 
 		while (pending_bucket_ < bucket_count_)
@@ -102,71 +164,11 @@ namespace cindex
 			bucketing_.finalize();
 	}
 
-	struct bucketing_index_state
-	{
-		std::size_t key_len_;
-		std::size_t n_;
-
-		std::size_t bucket_size_;
-
-		std::size_t dest_base_;
-		std::size_t dest_keys_per_block_;
-		std::size_t skip_bits_;
-
-		// could be calculated but included for simplicity
-		std::size_t bucket_count_;
-		std::size_t bucket_bits_;
-	};
-
-	template<typename BucketingType>
-	ssize_t bucketing_index<BucketingType>::load_from_file(int fd, off_t offset)
-	{
-		bucketing_index_state state;
-		ssize_t read_len = pread(fd, &state, sizeof(state), offset);
-		assert(read_len == sizeof(state));
-
-		key_len_ = state.key_len_;
-		n_ = state.n_;
-		bucket_size_ = state.bucket_size_;
-		dest_base_ = state.dest_base_;
-		dest_keys_per_block_ = state.dest_keys_per_block_;
-		skip_bits_ = state.skip_bits_;
-		bucket_count_ = state.bucket_count_;
-		bucket_bits_ = state.bucket_bits_;
-
-		// TODO: read bucketing information
-		// TODO: read trie information
-		return 0;
-	}
-
-	template<typename BucketingType>
-	ssize_t bucketing_index<BucketingType>::store_to_file(int fd, off_t offset)
-	{
-		assert(finalized());
-
-		bucketing_index_state state;
-
-		state.key_len_ = key_len_;
-		state.n_ = n_;
-		state.bucket_size_ = bucket_size_;
-		state.dest_base_ = dest_base_;
-		state.dest_keys_per_block_ = dest_keys_per_block_;
-		state.skip_bits_ = skip_bits_;
-		state.bucket_count_ = bucket_count_;
-		state.bucket_bits_ = bucket_bits_;
-
-		ssize_t wrote_len = pwrite(fd, &state, sizeof(state), offset);
-		assert(wrote_len == sizeof(state));
-
-		// TODO: write bucketing information
-		// TODO: write trie information
-		return 0;
-	}
-
-	template<typename BucketingType>
+	template<typename BucketingType, typename TrieType>
 	std::size_t
-	bucketing_index<BucketingType>::locate(const uint8_t* key) const
+	bucketing_index<BucketingType, TrieType>::locate(const uint8_t* key) const
 	{
+		assert(initialized_);
 		assert(finalized());
 
         std::size_t bucket = find_bucket(key);
@@ -188,9 +190,9 @@ namespace cindex
         return key_index;
 	}
 
-	template<typename BucketingType>
+	template<typename BucketingType, typename TrieType>
 	std::size_t
-	bucketing_index<BucketingType>::find_bucket(const uint8_t* key) const
+	bucketing_index<BucketingType, TrieType>::find_bucket(const uint8_t* key) const
     {
         std::size_t bits = 0;
         std::size_t index = 0;
@@ -211,20 +213,33 @@ namespace cindex
         return index;
     }
 
-	template<typename BucketingType>
+	template<typename BucketingType, typename TrieType>
 	void
-	bucketing_index<BucketingType>::index_pending_keys()
+	bucketing_index<BucketingType, TrieType>::index_pending_keys()
 	{
 		assert(pending_bucket_ < bucket_count_);
 
-		trie_.encode(
-				repr_,
-				//*pending_keys_, key_len_,
-				pending_keys_, key_len_,
-				0, pending_key_count_,
-				dest_base_ + last_dest_offset_, dest_keys_per_block_,
-				skip_bits_ + bucket_bits_
-			);
+		if (!out_dist_)
+		{
+			trie_.encode(
+					repr_,
+					//*pending_keys_, key_len_,
+					pending_keys_, key_len_,
+					0, pending_key_count_,
+					dest_base_ + last_dest_offset_, dest_keys_per_block_,
+					skip_bits_ + bucket_bits_
+				);
+		}
+		else
+		{
+			trie_analyzer().analyze(
+					*out_dist_,
+					//*pending_keys_, key_len_,
+					pending_keys_, key_len_,
+					0, pending_key_count_,
+					skip_bits_ + bucket_bits_
+				);
+		}
 
 		pending_bucket_ += 1;
 
@@ -246,24 +261,27 @@ namespace cindex
 		pending_key_count_ = 0;
 	}
 
-	template<typename BucketingType>
+	template<typename BucketingType, typename TrieType>
 	std::size_t
-	bucketing_index<BucketingType>::bit_size_trie_only() const
+	bucketing_index<BucketingType, TrieType>::bit_size_trie_only() const
 	{
+		assert(initialized_);
 		assert(finalized());
 		return repr_.size();
 	}
 
-	template<typename BucketingType>
+	template<typename BucketingType, typename TrieType>
 	std::size_t
-	bucketing_index<BucketingType>::bit_size() const
+	bucketing_index<BucketingType, TrieType>::bit_size() const
 	{
+		assert(initialized_);
 		assert(finalized());
 		return bit_size_trie_only() + bucketing_.bit_size();
 	}
 
 	template class bucketing_index<flat_absoff_bucketing<> >;
 	template class bucketing_index<twolevel_absoff_bucketing<> >;
+	template class bucketing_index<twolevel_absoff_bucketing<>, trie<true, 64> >;
 	template class bucketing_index<twolevel_reloff_bucketing>;
 	template class bucketing_index<semi_direct_16_absoff_bucketing>;
 	template class bucketing_index<semi_direct_16_reloff_bucketing>;

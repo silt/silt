@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "serializer.hpp"
 #include <vector>
 #include <boost/array.hpp>
 #include <tr1/unordered_map>
@@ -13,6 +14,9 @@ namespace cindex
 		twolevel_reloff_bucketing(std::size_t size = 0, std::size_t keys_per_bucket = 1, std::size_t keys_per_block = 1);
 
 		void resize(std::size_t size, std::size_t keys_per_bucket, std::size_t keys_per_block);
+
+		void serialize(serializer& s) const;
+		void deserialize(serializer& s);
 
 		void insert(const std::size_t& index_offset, const std::size_t& dest_offset);
 		void finalize();

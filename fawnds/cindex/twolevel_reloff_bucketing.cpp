@@ -65,6 +65,55 @@ namespace cindex
 	}
 
 	void
+	twolevel_reloff_bucketing::serialize(serializer& s) const
+	{
+		s << size_;
+		s << keys_per_bucket_;
+		s << keys_per_block_;
+		s << bits_per_key_;
+		s << bits_per_bucket_;
+		for (std::size_t i = 0; i < size_; i++)
+			s << bucket_info_[i][0] << bucket_info_[i][1];
+		s << current_i_;
+		for (std::size_t i = 0; i < group_size_; i++)
+			s << last_index_offsets_[i];
+		for (std::size_t i = 0; i < group_size_; i++)
+			s << last_dest_offsets_[i];
+		std::size_t size = overflow_.size();
+		s << size;
+		for (overflow_table::const_iterator it = overflow_.begin(); it != overflow_.end(); ++it)
+			s << (*it).first << (*it).second;
+	}
+
+	void
+	twolevel_reloff_bucketing::deserialize(serializer& s)
+	{
+		s >> size_;
+		s >> keys_per_bucket_;
+		s >> keys_per_block_;
+		s >> bits_per_key_;
+		s >> bits_per_bucket_;
+		bucket_info_.resize(size_);
+		for (std::size_t i = 0; i < size_; i++)
+			s >> bucket_info_[i][0] >> bucket_info_[i][1];
+		s >> current_i_;
+		for (std::size_t i = 0; i < group_size_; i++)
+			s >> last_index_offsets_[i];
+		for (std::size_t i = 0; i < group_size_; i++)
+			s >> last_dest_offsets_[i];
+		std::size_t size;
+		s >> size;
+		overflow_.clear();
+		for (std::size_t i = 0; i < size; i++)
+		{
+			overflow_table::key_type key;
+			overflow_table::mapped_type data;
+			s >> key >> data;
+			overflow_.insert(std::make_pair(key, data));
+		}
+	}
+
+	void
 	twolevel_reloff_bucketing::store(const std::size_t& idx, const std::size_t& type, const std::size_t& v)
 	{
 		bucket_info_[idx][type] = guarded_cast<uint8_t>(v);

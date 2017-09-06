@@ -36,6 +36,36 @@ namespace cindex
 
 	template<typename ValueType, typename UpperValueType>
 	void
+	twolevel_absoff_bucketing<ValueType, UpperValueType>::serialize(serializer& s) const
+	{
+		s << size_;
+		s << keys_per_bucket_;
+		s << upper_bucket_size_;
+		for (std::size_t i = 0; i < size_; i++)
+			s << bucket_info_[i][0] << bucket_info_[i][1];
+		for (std::size_t i = 0; i < size_ / upper_bucket_size_ + 2; i++)
+			s << upper_bucket_info_[i][0] << upper_bucket_info_[i][1];
+		s << current_i_;
+	}
+
+	template<typename ValueType, typename UpperValueType>
+	void
+	twolevel_absoff_bucketing<ValueType, UpperValueType>::deserialize(serializer& s)
+	{
+		s >> size_;
+		s >> keys_per_bucket_;
+		s >> upper_bucket_size_;
+		bucket_info_.resize(size_);
+		for (std::size_t i = 0; i < size_; i++)
+			s >> bucket_info_[i][0] >> bucket_info_[i][1];
+		upper_bucket_info_.resize(size_ / upper_bucket_size_ + 2);
+		for (std::size_t i = 0; i < size_ / upper_bucket_size_ + 2; i++)
+			s >> upper_bucket_info_[i][0] >> upper_bucket_info_[i][1];
+		s >> current_i_;
+	}
+
+	template<typename ValueType, typename UpperValueType>
+	void
 	twolevel_absoff_bucketing<ValueType, UpperValueType>::insert(const std::size_t& index_offset, const std::size_t& dest_offset)
 	{
 		assert(current_i_ < size_);

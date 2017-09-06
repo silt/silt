@@ -3,6 +3,8 @@
 #include "common.hpp"
 #include "block_info.hpp"
 #include "bit_access.hpp"
+#include "serializer.hpp"
+#include <cstring>
 
 namespace cindex
 {
@@ -13,10 +15,15 @@ namespace cindex
 		typedef BlockType block_type;
 
 		bit_vector();
+		bit_vector(const bit_vector<BlockType>& o);
 
 		~bit_vector();
 
+		void serialize(serializer& s) const;
+		void deserialize(serializer& s);
+
 		void clear();
+		void clear_lazy();
 
 		std::size_t
 		size() const CINDEX_WARN_UNUSED_RESULT
@@ -135,6 +142,15 @@ namespace cindex
 		// TODO: count consecutive 0's or 1's starting at some position for faster exp-golomb coding decoding
 
 		void compact();
+
+		bit_vector<block_type>& operator=(const bit_vector<block_type>& o)
+		{
+			size_ = o.size_;
+			capacity_ = o.capacity_;
+			resize();
+			memcpy(buf_, o.buf_, block_info<block_type>::size(size_));
+			return *this;
+		}
 
 	protected:
 		void resize();

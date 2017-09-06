@@ -1,6 +1,7 @@
 #include "fawnds_sf_ordered_trie.h"
 #include "debug.h"
 #include "print.h"
+#include "file_io.h"
 #include <sstream>
 
 namespace fawn
@@ -48,14 +49,6 @@ namespace fawn
 			return ERROR;
 		}
 
-		// the size can be zero
-		/*
-		if (size_ == 0) {
-			DPRINTF(2, "FawnDS_SF_Ordered_Trie::Create(): invalid size\n");
-			return ERROR;
-		}
-		*/
-
 		if (bucket_size_ == 0) {
 			fprintf(stderr, "FawnDS_SF_Ordered_Trie::Create(): invalid bucket size\n");
 			return ERROR;
@@ -92,8 +85,74 @@ namespace fawn
 	FawnDS_Return
 	FawnDS_SF_Ordered_Trie::Open()
 	{
-		// TODO: implement
-		return ERROR;
+		// TODO: test this code
+
+		if (index_)
+			return ERROR;
+
+        key_len_ = atoi(config_->GetStringValue("child::key-len").c_str());
+        data_len_ = atoi(config_->GetStringValue("child::data-len").c_str());
+        keys_per_block_ = atoi(config_->GetStringValue("child::keys-per-block").c_str());
+
+        // size_ is read from the header file
+
+        bucket_size_ = atoi(config_->GetStringValue("child::bucket-size").c_str());
+
+        skip_bits_ = atoi(config_->GetStringValue("child::skip-bits").c_str());
+
+		// actual_size_ is read from the header file
+
+		if (key_len_ == 0) {
+			fprintf(stderr, "FawnDS_SF_Ordered_Trie::Open(): invalid key length\n");
+			return ERROR;
+		}
+
+		if (data_len_ == 0) {
+			fprintf(stderr, "FawnDS_SF_Ordered_Trie::Open(): invalid data length\n");
+			return ERROR;
+		}
+
+		if (keys_per_block_ == 0) {
+			fprintf(stderr, "FawnDS_SF_Ordered_Trie::Open(): invalid keys per block\n");
+			return ERROR;
+		}
+
+		if (bucket_size_ == 0) {
+			fprintf(stderr, "FawnDS_SF_Ordered_Trie::Open(): invalid bucket size\n");
+			return ERROR;
+		}
+
+		DPRINTF(2, "FawnDS_SF_Ordered_Trie::Open(): loading from the header file\n");
+
+		if (ReadHeaderFromFile() != OK) {
+			fprintf(stderr, "FawnDS_SF_Ordered_Trie::Open(): failed to read the header\n");
+			return ERROR;
+		}
+
+		// index_ is created by ReadHeaderFromFile()
+
+		DPRINTF(2, "FawnDS_SF_Ordered_Trie::Open(): opening data store\n");
+
+		Configuration* storeConfig = new Configuration(config_, true);
+		storeConfig->SetContextNode("child::datastore");
+		storeConfig->SetStringValue("child::id", config_->GetStringValue("child::id"));
+        char buf[1024];
+        snprintf(buf, sizeof(buf), "%zu", key_len_ + data_len_);
+        //snprintf(buf, sizeof(buf), "%zu", key_len_ + data_len_ + 4);    // HACK: alignment for 1020-byte entry
+        storeConfig->SetStringValue("child::data-len", buf);
+		data_store_ = FawnDS_Factory::New(storeConfig);
+		if (data_store_ == NULL) {
+			DPRINTF(2, "FawnDS_SF_Ordered_Trie::Open(): could not create data store\n");
+			return ERROR;
+		}
+
+		FawnDS_Return ret = data_store_->Open();
+		if (ret != OK)
+			return ret;
+
+		DPRINTF(2, "FawnDS_SF_Ordered_Trie::Open(): <result> done\n");
+
+		return OK;
 	}
 
 	FawnDS_Return
@@ -102,8 +161,16 @@ namespace fawn
 		if (!index_)
 			return ERROR;
 
-		if (!index_->finalized())
+		if (!index_->finalized()) {
 			index_->flush();
+
+			if (WriteHeaderToFile() != OK) {
+				DPRINTF(2, "FawnDS_SF_Ordered_Trie::Flush(): failed to store the states\n");
+				return ERROR;
+			}
+
+			data_store_->Flush();
+		}
 		else {
 			DPRINTF(2, "FawnDS_SF_Ordered_Trie::Flush(): already finalized\n");
 		}
@@ -130,6 +197,13 @@ namespace fawn
 	FawnDS_Return
 	FawnDS_SF_Ordered_Trie::Destroy()
 	{
+		string filename = config_->GetStringValue("child::file") + "_";
+		filename += config_->GetStringValue("child::id");
+		if (unlink(filename.c_str())) {
+			fprintf(stderr, "FawnDS_SF_Ordered_Trie::Destroy(): could not delete file\n");
+			return ERROR;
+		}
+
 		Configuration* storeConfig = new Configuration(config_, true);
 		storeConfig->SetContextNode("child::datastore");
 		storeConfig->SetStringValue("child::id", config_->GetStringValue("child::id"));
@@ -441,184 +515,45 @@ namespace fawn
 			state = ERROR;
 	}
 
-	/*
-    template <typename BucketingType>
-    void
-    FawnDS_SF_Ordered_Trie<BucketingType>::LoadFromFile()
-    {
-        if (initialized_) {
-            fprintf(stderr, "FawnDS_SF_Ordered_Trie: LoadFromFile: already initialized\n");
-            return;
-        }
+	FawnDS_Return
+	FawnDS_SF_Ordered_Trie::WriteHeaderToFile() const
+	{
+		string filename = config_->GetStringValue("child::file") + "_";
+		filename += config_->GetStringValue("child::id");
+		FILE* fp;
+		if ((fp = fopen(filename.c_str(), "wb")) == NULL)
+		{
+			perror("Could not open header file");
+			return ERROR;
+		}
+		cindex::serializer::offset_t off = 0;
+		cindex::serializer ser_state(fp, off);
+		ser_state << size_;
+		ser_state << actual_size_;
+		ser_state << *index_;
+		fclose(fp);
+		return OK;
+	}
 
-        string filename = config_->getStringValue("file");
-        int fd;
-        if ((fd = open(filename.c_str(), O_RDONLY | O_NOATIME, 0666)) == -1) {
-            perror("FawnDS_SF_Ordered_Trie: LoadFromFile: could not open index file");
-            return;
-        }
-        
-        // read base offset
-        if (read(fd, &base_data_store_offset_, sizeof(base_data_store_offset_)) != sizeof(base_data_store_offset_)) {
-            fprintf(stderr, "FawnDS_SF_Ordered_Trie: LoadFromFile: unable to read base offset\n");
-            close(fd);
-            return;
-        }
-
-        // read hash table size
-        if (read(fd, &hash_table_size_, sizeof(hash_table_size_)) != sizeof(hash_table_size_)) {
-            fprintf(stderr, "FawnDS_SF_Ordered_Trie: LoadFromFile: unable to read hash table size\n");
-            close(fd);
-            return;
-        }
-
-        // read actual hash table size (inferrable, but for compatiblity with binary search)
-        if (read(fd, &actual_size_, sizeof(actual_size_)) != sizeof(actual_size_)) {
-            fprintf(stderr, "FawnDS_SF_Ordered_Trie: LoadFromFile: unable to read actual hash table size\n");
-            close(fd);
-            return;
-        }
-
-        group_bits_ = 0;
-        while ((1u << (++group_bits_)) * group_size_ < hash_table_size_);
-
-        // read hash function offsets
-        for (size_t i = 0; i < (1u << group_bits_) + 1; i++) {
-            hash_func_index_type offset;
-            if (read(fd, &offset, sizeof(offset)) != sizeof(offset)) {
-                fprintf(stderr, "FawnDS_SF_Ordered_Trie: LoadFromFile: unable to read offset\n");
-                close(fd);
-                return;
-            }
-            hash_func_offsets_.push_back(offset);
-        }
-
-        // read datastore offsets
-        for (size_t i = 0; i < (1u << group_bits_) + 1; i++) {
-            data_store_index_type offset;
-            if (read(fd, &offset, sizeof(offset)) != sizeof(offset)) {
-                fprintf(stderr, "FawnDS_SF_Ordered_Trie: LoadFromFile: unable to read offset\n");
-                close(fd);
-                return;
-            }
-            data_store_offsets_.push_back(offset);
-        }
-
-        // read hash function
-        hash_func_index_type end = hash_func_offsets_[(1u << group_bits_)];
-        uint8_t b;
-        for (size_t i = 0; i < end; i += sizeof(b) * 8) {
-            if (read(fd, &b, sizeof(b)) != sizeof(b)) {
-                fprintf(stderr, "FawnDS_SF_Ordered_Trie: LoadFromFile: unable to read hash function byte\n");
-                close(fd);
-                return;
-            }
-            for (size_t j = 0; j < sizeof(b) * 8 && i + j < end; j++)
-                hash_funcs_.push_back(trie::bit_access<uint8_t>::get(&b, j));
-        }
-
-        close(fd);
-        finalized_ = true;
-
-        initialized_ = true;
-        fprintf(stdout, "FawnDS_SF_Ordered_Trie: LoadFromFile: loaded\n");
-
-#ifdef DEBUG
-        fprintf(stdout, "FawnDS_SF_Ordered_Trie: LoadFromFile: state: %lu\n", hash_state());
-#endif
-    }
-
-    template <typename BucketingType>
-    void
-    FawnDS_SF_Ordered_Trie<BucketingType>::StoreToFile()
-    {
-        if (!initialized_) {
-            fprintf(stderr, "FawnDS_SF_Ordered_Trie: StoreToFile: not initailized\n");
-            return;
-        }
-
-        if (!finalized_) {
-            fprintf(stderr, "FawnDS_SF_Ordered_Trie: StoreToFile: not finalized\n");
-            return;
-        }
-
-        string filename = config_->getStringValue("file");
-        int fd;
-        if ((fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_NOATIME, 0666)) == -1) {
-            perror("FawnDS_SF_Ordered_Trie: StoreToFile: could not open index file");
-            return;
-        }
-
-        // write base offset
-        if (write(fd, &base_data_store_offset_, sizeof(base_data_store_offset_)) != sizeof(base_data_store_offset_)) {
-            fprintf(stderr, "FawnDS_SF_Ordered_Trie: StoreToFile: unable to write base offset\n");
-            close(fd);
-            return;
-        }
-
-        // write hash table size
-        if (write(fd, &hash_table_size_, sizeof(hash_table_size_)) != sizeof(hash_table_size_)) {
-            fprintf(stderr, "FawnDS_SF_Ordered_Trie: StoreToFile: unable to write hash table size\n");
-            close(fd);
-            return;
-        }
-
-        // write actual hash table size
-        if (write(fd, &actual_size_, sizeof(actual_size_)) != sizeof(actual_size_)) {
-            fprintf(stderr, "FawnDS_SF_Ordered_Trie: StoreToFile: unable to write actual hash table size\n");
-            close(fd);
-            return;
-        }
-
-        // write hash function offsets
-        assert(hash_func_offsets_.size() == (1u << group_bits_) + 1);
-        for (size_t i = 0; i < (1u << group_bits_) + 1; i++) {
-            hash_func_index_type offset = hash_func_offsets_[i];
-            if (write(fd, &offset, sizeof(offset)) != sizeof(offset)) {
-                fprintf(stderr, "FawnDS_SF_Ordered_Trie: StoreToFile: unable to write offset\n");
-                close(fd);
-                return;
-            }
-        }
-
-        // write datastore offsets
-        assert(data_store_offsets_.size() == (1u << group_bits_) + 1);
-        for (size_t i = 0; i < (1u << group_bits_) + 1; i++) {
-            data_store_index_type offset = data_store_offsets_[i];
-            if (write(fd, &offset, sizeof(offset)) != sizeof(offset)) {
-                fprintf(stderr, "FawnDS_SF_Ordered_Trie: StoreToFile: unable to write offset\n");
-                close(fd);
-                return;
-            }
-        }
-
-        // write hash function
-        hash_func_index_type end = hash_func_offsets_[(1u << group_bits_)];
-        assert(hash_funcs_.size() == end);
-        uint8_t b;
-        for (size_t i = 0; i < end; i += sizeof(b) * 8) {
-            b = 0;
-            for (size_t j = 0; j < sizeof(b) * 8 && i + j < end; j++)
-            {
-                if (hash_funcs_[i + j])
-                    trie::bit_access<uint8_t>::set(&b, j);
-                else
-                    trie::bit_access<uint8_t>::reset(&b, j);
-            }
-            if (write(fd, &b, sizeof(b)) != sizeof(b)) {
-                fprintf(stderr, "FawnDS_SF_Ordered_Trie: StoreToFile: unable to write hash function byte\n");
-                close(fd);
-                return;
-            }
-        }
-
-        close(fd);
-        fprintf(stdout, "FawnDS_SF_Ordered_Trie: StoreToFile: stored\n");
-
-#ifdef DEBUG
-        fprintf(stdout, "FawnDS_SF_Ordered_Trie: StoreToFile: state: %lu\n", hash_state());
-#endif
-    }
-	*/
+	FawnDS_Return
+	FawnDS_SF_Ordered_Trie::ReadHeaderFromFile()
+	{
+		string filename = config_->GetStringValue("child::file") + "_";
+		filename += config_->GetStringValue("child::id");
+		FILE* fp;
+		if ((fp = fopen(filename.c_str(), "rb")) == NULL)
+		{
+			perror("Could not open header file");
+			return ERROR;
+		}
+		cindex::serializer::offset_t off = 0;
+		cindex::serializer ser_state(fp, off);
+		ser_state >> size_;
+		ser_state >> actual_size_;
+		index_ = new index_type(key_len_, size_, bucket_size_, 0, keys_per_block_, skip_bits_);
+		ser_state >> *index_;
+		fclose(fp);
+		return OK;
+	}
 
 }  // namespace fawn

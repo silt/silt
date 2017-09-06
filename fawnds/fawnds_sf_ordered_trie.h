@@ -11,10 +11,11 @@ namespace fawn
     // configuration
     //   <type>: "sf_ordered_trie" (fixed)
     //   <id>: the ID of the store
+    //   <file>: the file name prefix to store bookkeeping information for persistency
     //   <key-len>: the fixed length of all keys
     //   <data-len>: the fixed length of all data
     //   <keys-per-block>: the number of key-value pairs in a I/O block
-    //   <size>: the total number of entries in the store
+    //   <size>: the maximum number of entries in the store (used for construction only)
     //   <bucket-size>: the number of entires in each bucket
     //   <skip-bits>: the number of MSBs to ignore when calculating the bucket number
     //   <datastore>: the configuration for the data store
@@ -62,8 +63,12 @@ namespace fawn
             FawnDS_Iterator data_store_it;
         };
 
+    protected:
+        FawnDS_Return WriteHeaderToFile() const;
+        FawnDS_Return ReadHeaderFromFile();
+
 	private:
-        typedef cindex::bucketing_index<cindex::twolevel_absoff_bucketing<> > index_type;
+        typedef cindex::bucketing_index<cindex::twolevel_absoff_bucketing<>, cindex::trie<true, 64> > index_type;
         index_type* index_;
         FawnDS* data_store_;
 
