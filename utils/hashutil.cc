@@ -685,31 +685,31 @@ namespace fawn {
 
     std::string HashUtil::MD5Hash(const char* inbuf, size_t in_length)
     {
-	EVP_MD_CTX mdctx;
+        std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> mdctx(EVP_MD_CTX_new(),
+                                                        EVP_MD_CTX_free);
         unsigned char md_value[EVP_MAX_MD_SIZE];
         unsigned int md_len;
 
-	EVP_DigestInit(&mdctx, EVP_md5());
-	EVP_DigestUpdate(&mdctx, (const void*) inbuf, in_length);
-	EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
-	EVP_MD_CTX_cleanup(&mdctx);
+        EVP_DigestInit(mdctx.get(), EVP_md5());
+        EVP_DigestUpdate(mdctx.get(), (const void*) inbuf, in_length);
+        EVP_DigestFinal_ex(mdctx.get(), md_value, &md_len);
 
-	return string((char*)md_value, (size_t)md_len);
+        return string((char*)md_value, (size_t)md_len);
     }
 
 
     std::string HashUtil::SHA1Hash(const char* inbuf, size_t in_length)
     {
-	EVP_MD_CTX mdctx;
-	string ret;
+        std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> mdctx(EVP_MD_CTX_new(),
+                                                        EVP_MD_CTX_free);
+        string ret;
         unsigned char md_value[EVP_MAX_MD_SIZE];
         unsigned int md_len;
 
-	EVP_DigestInit(&mdctx, EVP_sha1());
-	EVP_DigestUpdate(&mdctx, (const void*) inbuf, in_length);
-	EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
-	EVP_MD_CTX_cleanup(&mdctx);
+        EVP_DigestInit(mdctx.get(), EVP_sha1());
+        EVP_DigestUpdate(mdctx.get(), (const void*) inbuf, in_length);
+        EVP_DigestFinal_ex(mdctx.get(), md_value, &md_len);
 
-	return string((char*)md_value, (size_t)md_len);
+        return string((char*)md_value, (size_t)md_len);
     }
 } // namespace fawn

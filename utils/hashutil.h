@@ -2,6 +2,7 @@
 #ifndef _HASHUTIL_H_
 #define _HASHUTIL_H_
 
+#include <memory>
 #include <sys/types.h>
 #include <string>
 #include <stdlib.h>
