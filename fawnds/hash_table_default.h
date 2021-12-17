@@ -21,18 +21,18 @@ class Configuration;
 class HashTableDefault : public FawnDS {
     // Incrementing keyfragbits above 15 requires
     // more modifications to code (e.g. hashkey is 16 bits in (Insert())
-    static const uint32_t KEYFRAGBITS = 15;
-    static const uint32_t KEYFRAGMASK = (1 << KEYFRAGBITS) - 1;
-    static const uint32_t INDEXBITS = 16;
-    static const uint32_t INDEXMASK = (1 << INDEXBITS) - 1;
-    static const uint32_t VALIDBITMASK = KEYFRAGMASK+1;
+    static constexpr uint32_t KEYFRAGBITS = 15;
+    static constexpr uint32_t KEYFRAGMASK = (1 << KEYFRAGBITS) - 1;
+    static constexpr uint32_t INDEXBITS = 16;
+    static constexpr uint32_t INDEXMASK = (1 << INDEXBITS) - 1;
+    static constexpr uint32_t VALIDBITMASK = KEYFRAGMASK+1;
 
-    static const double EXCESS_BUCKET_FACTOR = 1.1;
-    static const double MAX_DELETED_RATIO = 0.8;
-    static const double MAX_LOAD_FACTOR = 0.9;
+    static constexpr double EXCESS_BUCKET_FACTOR = 1.1;
+    static constexpr double MAX_DELETED_RATIO = 0.8;
+    static constexpr double MAX_LOAD_FACTOR = 0.9;
 
-    static const double PROBES_BEFORE_REHASH = 8;
-    //static const double PROBES_BEFORE_REHASH = 16;
+    static constexpr double PROBES_BEFORE_REHASH = 8;
+    //static constexpr double PROBES_BEFORE_REHASH = 16;
 
 protected:
     /*
