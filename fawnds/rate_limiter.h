@@ -2,7 +2,7 @@
 #ifndef _RATE_LIMITER_H_
 #define _RATE_LIMITER_H_
 
-#include <tbb/atomic.h>
+#include <atomic>
 
 namespace fawn {
 
@@ -38,13 +38,13 @@ namespace fawn {
         void update_tokens();
 
     private:
-        tbb::atomic<int64_t> tokens_;
+        std::atomic<int64_t> tokens_;
         int64_t max_tokens_;
         int64_t new_tokens_per_interval_;
         int64_t ns_per_interval_;
         int64_t min_retry_interval_ns_;
 
-        tbb::atomic<int64_t> last_time_;
+        std::atomic<int64_t> last_time_;
     };
 
 } // namespace fawn

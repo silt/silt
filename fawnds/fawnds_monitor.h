@@ -5,7 +5,8 @@
 #include "fawnds_proxy.h"
 #include "rate_limiter.h"
 #include <pthread.h>
-#include <tbb/atomic.h>
+#include <atomic>
+#include <unistd.h>
 
 namespace fawn {
 
@@ -40,8 +41,8 @@ namespace fawn {
 
         volatile bool exiting_;
 
-        mutable tbb::atomic<size_t> write_ops_;
-        mutable tbb::atomic<size_t> read_ops_;
+        mutable std::atomic<size_t> write_ops_;
+        mutable std::atomic<size_t> read_ops_;
 
         uint64_t last_time_;
 
