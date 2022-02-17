@@ -125,9 +125,9 @@ namespace fawn {
 
         // TODO: concurrent operations
 
-        file_store->next_append_id_ = next_append_id_;
+        file_store->next_append_id_.exchange(next_append_id_);
         file_store->end_id_ = end_id_;
-        file_store->next_sync_ = next_sync_;
+        file_store->next_sync_.exchange(next_sync_);
 
         return OK;
     }

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <sstream>
 #include <time.h>
+#include <atomic>
 
 namespace fawn {
 

@@ -122,8 +122,8 @@ namespace fawn {
 
         size_t back_store_size_;
 
-        tbb::atomic<bool> convert_task_running_;    // also protected by mutex_
-        tbb::atomic<bool> merge_task_running_;      // also protected by mutex_
+        std::atomic<bool> convert_task_running_;    // also protected by mutex_
+        std::atomic<bool> merge_task_running_;      // also protected by mutex_
 
         friend class MergeTask;
 
@@ -131,8 +131,8 @@ namespace fawn {
         static TaskScheduler task_scheduler_merge_;
 
         static const size_t latency_track_store_count_ = 100;
-        mutable tbb::atomic<uint64_t> latencies_[4][latency_track_store_count_];
-        mutable tbb::atomic<uint64_t> counts_[4][latency_track_store_count_];
+        mutable std::atomic<uint64_t> latencies_[4][latency_track_store_count_];
+        mutable std::atomic<uint64_t> counts_[4][latency_track_store_count_];
     };
 
 } // namespace fawn

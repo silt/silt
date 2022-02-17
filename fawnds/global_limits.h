@@ -3,7 +3,7 @@
 #define _GLOBAL_LIMITS_H_
 
 #include "rate_limiter.h"
-#include <tbb/atomic.h>
+#include <atomic>
 
 namespace fawn {
 
@@ -29,7 +29,7 @@ namespace fawn {
     private:
         static GlobalLimits global_limits_;
 
-        tbb::atomic<int> disabled_;
+        std::atomic<int> disabled_;
 
         RateLimiter convert_rate_limiter_;
         RateLimiter merge_rate_limiter_;

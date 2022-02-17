@@ -9,7 +9,8 @@
 #ifdef __linux__
 
 #include <sys/types.h>
-#include <bits/syscall.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 extern "C" {
 pid_t gettid()
